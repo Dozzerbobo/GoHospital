@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="icon" href="/assets/logo.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0369A1"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"><script src="/assets/theme.js"></script><link rel="stylesheet" href="/assets/app.css"><title>Get the app — GoHospital</title><meta name="description" content="Install GoHospital on your phone — Android app and iPhone home-screen app."></head><body>
+<div id="site-header"></div>
+<main id="main"><section class="s"><div class="wrap narrow" style="text-align:center">
+<img src="/assets/icon-192.png" alt="GoHospital app icon" width="88" height="88" style="margin:0 auto 18px;border-radius:22px;box-shadow:var(--shadow-md)">
+<h1>Get the GoHospital app</h1><p class="sub">Find the right hospital in one tap — with live emergency status, saved for quick access on your phone.</p>
+<div id="android" style="margin:28px 0 10px"><a class="btn btn-primary" id="apkBtn" href="/downloads/gohospital.apk" download style="min-height:54px;font-size:16px;display:none">Download for Android (APK)</a>
+<button class="btn btn-primary" id="installBtn" type="button" style="min-height:54px;font-size:16px;display:none">Install app</button>
+<p class="hint" id="apkNote" style="margin-top:12px"></p></div>
+<div class="form-card" style="text-align:left;margin-top:30px"><h2 style="font-size:20px">Install on Android</h2><ol style="padding-left:20px;line-height:1.8"><li>Open <b>gohospital.online</b> in Chrome.</li><li>Tap <b>Install app</b> above, or Chrome menu <b>⋮ → Install app</b>.</li><li>Open GoHospital from your home screen.</li></ol>
+<p class="hint">Using the APK file? Allow “install unknown apps” for your browser when Android asks, then open the downloaded file.</p></div>
+<div class="form-card" style="text-align:left;margin-top:16px"><h2 style="font-size:20px">Install on iPhone</h2><ol style="padding-left:20px;line-height:1.8"><li>Open <b>gohospital.online</b> in Safari.</li><li>Tap the <b>Share</b> button.</li><li>Choose <b>Add to Home Screen</b>.</li></ol></div>
+</div></section></main>
+<div id="site-footer"></div>
+<script src="/assets/config.js"></script><script src="/assets/app.js"></script><script>GH.header('app');GH.footer();
+(async()=>{const a=document.getElementById('apkBtn'),i=document.getElementById('installBtn'),n=document.getElementById('apkNote');
+try{const r=await fetch('/downloads/gohospital.apk',{method:'HEAD'});const t=r.headers.get('content-type')||'';if(r.ok&&!t.includes('text/html'))a.style.display='inline-flex';}catch(e){}
+function inst(){if(GH_INSTALL.standalone()){n.textContent='You are already using the app.';return}if(GH_INSTALL.can())i.style.display='inline-flex';else if(a.style.display==='none')n.textContent='Open this page in Chrome on Android, then use the menu ⋮ → Install app.';}
+inst();addEventListener('gh-installable',inst);i.addEventListener('click',async()=>{await GH_INSTALL.run();i.style.display='none'});})();
+</script></body></html>

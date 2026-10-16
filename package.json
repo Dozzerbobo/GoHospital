@@ -1,0 +1,14 @@
+{
+  "name": "gohospital",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GoHospital — hospital finder with live hospital dashboards (Cloudflare Pages + D1)",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=DB --port 8788",
+    "db:local": "wrangler d1 migrations apply gohospital --local",
+    "db:remote": "wrangler d1 migrations apply gohospital --remote",
+    "deploy": "wrangler pages deploy public --project-name=gohospital",
+    "test": "node scripts/test.mjs"
+  },
+  "devDependencies": { "wrangler": "^4" }
+}
