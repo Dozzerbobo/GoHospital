@@ -27,10 +27,13 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: Publish to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: gohospital
-          directory: public
+          node-version: 20
+
+      - name: Deploy to Cloudflare Pages
+        run: npx wrangler pages deploy public --project-name gohospital
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
