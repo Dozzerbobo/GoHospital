@@ -1,100 +1,36 @@
 name: Build Android APK + deploy to Cloudflare
 
 on:
-  workflow_dispatch: {}
   push:
-    branches: [main]
-    paths: ['android/**', '.github/workflows/android.yml']
-
-permissions:
-  contents: write
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17' }
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
-      - uses: gradle/actions/setup-gradle@v4
-        with: { gradle-version: '8.7' }
-
-      - name: Signing key (use saved one, or create a new one)
-        run: |
-          set -e
-          if [ -n "$KS_B64" ]; then
-            echo "$KS_B64" | base64 -d > android/release.keystore
-            echo "KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-            echo "KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-            echo "NEWKEY=0" >> $GITHUB_ENV
-          else
-            PW=$(openssl rand -hex 16)
-            echo "::add-mask::$PW"
-            keytool -genkeypair -v -keystore android/release.keystore -storetype PKCS12 \
-              -alias gohospital -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "$PW" -keypass "$PW" -dname "CN=GoHospital, O=GoHospital Ltd, C=NG"
-            echo "KEYSTORE_PASSWORD=$PW" >> $GITHUB_ENV
-            echo "KEY_ALIAS=gohospital" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=$PW" >> $GITHUB_ENV
-            echo "NEWKEY=1" >> $GITHUB_ENV
-            mkdir -p keyout
-            cp android/release.keystore keyout/release.keystore
-            printf 'ANDROID_KEY_ALIAS=gohospital\nANDROID_KEYSTORE_PASSWORD=%s\n' "$PW" > keyout/passwords.txt
-            base64 -w0 android/release.keystore > keyout/keystore.b64.txt
-          fi
-          echo "KEYSTORE_PATH=$GITHUB_WORKSPACE/android/release.keystore" >> $GITHUB_ENV
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build signed APK
-        working-directory: android
-        run: gradle assembleRelease --no-daemon
-
-      - name: Collect APK + website link file
         run: |
-          set -e
-          mkdir -p public/downloads public/.well-known
-          cp android/app/build/outputs/apk/release/app-release.apk public/downloads/gohospital.apk
-          FP=$(keytool -list -v -keystore android/release.keystore -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" | grep 'SHA256:' | head -1 | sed 's/.*SHA256: *//')
-          echo "Signing fingerprint: $FP"
-          cat > public/.well-known/assetlinks.json <<EOF
-          [{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"online.gohospital.app","sha256_cert_fingerprints":["$FP"]}}]
-          EOF
-          sed -i 's/^ *\[/[/' public/.well-known/assetlinks.json
-          cat public/.well-known/assetlinks.json
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
 
-      - name: Keep APK as a download
-        uses: actions/upload-artifact@v4
-        with:
-          name: gohospital-apk
-          path: public/downloads/gohospital.apk
-
-      - name: Save new signing key (first run only)
-        if: env.NEWKEY == '1'
-        uses: actions/upload-artifact@v4
-        with:
-          name: KEEP-SAFE-signing-key
-          path: keyout/
-          retention-days: 90
-
-      - name: Publish APK on GitHub Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: apk-${{ github.run_number }}
-          name: GoHospital Android ${{ github.run_number }}
-          files: public/downloads/gohospital.apk
-
-      - name: Deploy website + APK to Cloudflare Pages
-        if: env.CF_TOKEN != ''
-        uses: cloudflare/wrangler-action@v3
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy public --project-name=gohospital
+          projectName: gohospital
+          directory: public
