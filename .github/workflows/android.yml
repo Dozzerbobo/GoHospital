@@ -17,11 +17,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare Functions Source Files
-        run: |
-          mkdir -p functions/src
-          cp -r src/*.js functions/src/
-
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
